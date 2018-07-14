@@ -1,8 +1,10 @@
 # ColleagueTracker
 
-This is a simple Windows Command-Line tool, written in C# and developed in Visual Studio 2017, that checks the Active Directoy for changes in structure. The goal is to quickly find out about people leaving, joining, or changing place in the hierarchy.
+This is a simple Windows Command-Line tool, written in C# and developed in Visual Studio 2017, that checks the Active Directoy for changes in structure. The goal is to quickly find out about people leaving, joining, or changing place in the hierarchy. Quite useful when you want to keep an eye on new-joiners or leavers.
 
 The tool is configured with a set of teams (for example, departments or units in the company), and for each team, the logins of the respective managers. When executed for the first time, it fetches the list of direct reports and stores it in a set of json files. The next time it executes, it again reads the structure, compares with the already existing json files, and displays the deltas.
+
+Finally, the tool does not require any special permissions to run.
 
 ## Configuration - App.Config
 
