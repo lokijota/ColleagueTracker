@@ -23,5 +23,9 @@ There Team1/Team2 are the names of the departments/units, and managerN are the l
 
 For each team, the application writes out/reads two files: deltas_teamName.json and users_teamName.json . The first file stores a set of simple records: "joined, userid1, 1/1/2017" or "left, userid2, 2/2/2018". The second file simply stores the logins of the current users in the respective team.
 
+The screenshot below shows the output that is written to the console, showing the different cases of people joining a team, leaving a company, or moving to a different team. 
 
 ![](output.png)
+
+The top line progressively prints out dots as it reads from the AD. There is strange situation where a user will show up as a Direct Report of a given manager, but then when you search for it you don't find it because it has been disabled in the AD. I'm showing these cases as \[disabled: 'userid'] . One other case is when managers leave the company. These I show as \[Manager not found: 'userid'].
+For employees who moves or joined, I also show the role, the name of the manager, and the name of the Department as stored in the AD.
