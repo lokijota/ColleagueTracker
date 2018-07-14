@@ -24,3 +24,4 @@ There Team1/Team2 are the names of the departments/units, and managerN are the l
 For each team, the application writes out/reads two files: deltas_teamName.json and users_teamName.json . The first file stores a set of simple records: "joined, userid1, 1/1/2017" or "left, userid2, 2/2/2018". The second file simply stores the logins of the current users in the respective team.
 
 
+![](output.png)
