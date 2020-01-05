@@ -4,14 +4,14 @@ This is a simple Windows Command-Line tool, written in C# and developed in Visua
 
 The tool is configured with a set of teams (for example, departments or units in the company), and for each team, the logins of the respective managers. When executed for the first time, it fetches the list of direct reports and stores it in a set of json files. The next time it executes, it again reads the structure, compares with the already existing json files, and displays the deltas.
 
-Finally, the tool does not require any special permissions to run.
+Finally, the tool does not require any special permissions to run. If you can read the AD/Global Address List, you can do the queries.
 
 ## Configuration - App.Config
 
 To configure the application you have to edit App.Config:
 
 ```xml
-<ColleagueTracker LdapPath="LDAP://DC=department,DC=company,DC=com">
+<ColleagueTracker LdapPath="LDAP://DC=department,DC=company,DC=com" AlternativeLdapPath="LDAP://DC=department2,DC=company,DC=com">
     <Teams >
       <Team name="Team1" managers="manager1,manager2,manager3"/>
       <Team name="Team2" managers="manager4,manager5,manager6"/>
@@ -31,3 +31,5 @@ The screenshot below shows the output that is written to the console, showing th
 
 The top line progressively prints out dots as it reads from the AD. There is strange situation where a user will show up as a Direct Report of a given manager, but then when you search for it you don't find it because it has been disabled in the AD. I'm showing these cases as \[disabled: 'userid'] . One other case is when managers leave the company. These I show as \[Manager not found: 'userid'].
 For employees who moves or joined, I also show the role, the name of the manager, and the name of the Department as stored in the AD.
+
+If a user exists in AD but can't be find either in the `LdapPath` or `AlternativeLdapPath`, he's presented as non-existent/left.
