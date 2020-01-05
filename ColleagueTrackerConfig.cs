@@ -36,5 +36,18 @@
             }
         }
 
+        [ConfigurationProperty("AlternativeLdapPath", IsRequired = false)]
+        public string AlternativeLdapPath
+        {
+            get
+            {
+                return (string)this["AlternativeLdapPath"];
+            }
+            set
+            {
+                this["AlternativeLdapPath"] = value;
+            }
+        }
+
     }
 }

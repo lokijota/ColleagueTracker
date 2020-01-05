@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
 
     class Program
@@ -13,11 +14,14 @@
 
             if(config.Teams == null || config.Teams.Count == 0)
             {
-                Console.WriteLine("No configurations found. Create <ColleagueTracker> and try again.");
+                Console.WriteLine("No configurations found. Create <ColleagueTracker> section in ColleagueTracker.exe.config and try again.");
                 return;
             }
 
             ADServices.LdapPath = config.LdapPath;
+            ADServices.AlternativeLdapPath = config.AlternativeLdapPath != null && config.AlternativeLdapPath.Length > 0 ? config.AlternativeLdapPath : null;
+
+            Stopwatch sw = new Stopwatch(); sw.Start();
 
             // Process each of the configurations
             List<UserInfo> teamMembers = new List<UserInfo>();
@@ -25,9 +29,8 @@
             {
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine();
-                Console.Write("Team '{0}'", item.Name);
+                Console.Write("Team '{0}' ", item.Name);
                 Console.ForegroundColor = ConsoleColor.Gray;
-
 
                 // get all direct reports of the different managers
                 string[] managers = item.Managers.Split(',');
@@ -51,10 +54,9 @@
                 teamMembers.Clear();
             }
 
-            Console.WriteLine("\nDone. Press any key.");
+            sw.Stop();
+            Console.WriteLine("\nDone. Elapsed time: {0} seconds. Press any key.", sw.ElapsedMilliseconds/1000);
             Console.ReadLine();
         }
     }
 }
-
-

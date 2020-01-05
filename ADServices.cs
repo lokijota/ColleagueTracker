@@ -16,6 +16,9 @@
         // LDAP Path, example: "LDAP://DC=myregion,DC=mycompany,DC=com"
         public static string LdapPath { get; set; }
 
+        // Second path to try if a user is not found on the previous one (could be generic...)
+        public static string AlternativeLdapPath { get; set; }
+
         // Cache of users read from AD, to make less queries
         private static Dictionary<string, UserInfo> _userCache = new Dictionary<string, UserInfo>();
 
@@ -28,7 +31,7 @@
         {
             List<UserInfo> reports = new List<UserInfo>();
 
-            // Find the manager
+            // Find the manager - note: there's no gain in keeping this in a static
             DirectoryEntry de = new DirectoryEntry(LdapPath);
 
             DirectorySearcher ds = new DirectorySearcher(de);
@@ -36,6 +39,18 @@
             ds.SearchScope = SearchScope.Subtree;
 
             SearchResult rs = ds.FindOne();
+
+            // try the alternative LDAP if defined
+            if(rs == null && AlternativeLdapPath != null)
+            {
+                DirectoryEntry de2 = new DirectoryEntry(AlternativeLdapPath);
+
+                DirectorySearcher ds2 = new DirectorySearcher(de2);
+                ds2.Filter = "(&((&(objectCategory=Person)(objectClass=User)))(samaccountname=" + managerName + "))";
+                ds2.SearchScope = SearchScope.Subtree;
+
+                rs = ds2.FindOne();
+            }
 
             if(rs == null)
             {
@@ -52,7 +67,7 @@
                     Manager = rs.Properties["manager"][0].ToString(),
                     JobTitle = rs.Properties.Contains("title") ? rs.Properties["title"][0].ToString() : string.Empty,
                     Office = rs.Properties["physicaldeliveryofficename"][0].ToString(),
-                    Created = DateTime.Parse(rs.Properties["whenCreated"][0].ToString())
+                    Created = rs.Properties.Contains("whenCreated") ? DateTime.Parse(rs.Properties["whenCreated"][0].ToString()) : DateTime.MinValue
                 };
 
                 _userCache.Add(userInfo.Login, userInfo);
@@ -77,7 +92,7 @@
                         Manager = managerName,
                         JobTitle = empde.Properties.Contains("title") ? empde.Properties["title"].Value.ToString() : string.Empty,
                         Office = empde.Properties["physicaldeliveryofficename"].Value.ToString(),
-                        Created = DateTime.Parse(empde.Properties["whenCreated"].Value.ToString())
+                        Created = empde.Properties.Contains("whenCreated") ? DateTime.Parse(empde.Properties["whenCreated"].Value.ToString()) : DateTime.MinValue
                     };
 
                     if(!_userCache.ContainsKey(userInfo.Login))
@@ -120,7 +135,19 @@
 
             SearchResult rs = ds.FindOne();
 
-            // not found
+            // try the alternative path
+            if(rs == null && AlternativeLdapPath != null)
+            {
+                DirectoryEntry de2 = new DirectoryEntry(AlternativeLdapPath);
+
+                DirectorySearcher ds2 = new DirectorySearcher(de2);
+                ds2.Filter = "(&((&(objectCategory=Person)(objectClass=User)))(samaccountname=" + login + "))";
+                ds2.SearchScope = SearchScope.Subtree;
+
+                rs = ds2.FindOne();
+            }
+
+            // not found in either main or alternative ldap path
             if(rs == null)
             {
                 return null;
@@ -134,7 +161,7 @@
                 Manager = rs.Properties["manager"][0].ToString(),
                 JobTitle = rs.Properties.Contains("title") ? rs.Properties["title"][0].ToString() : string.Empty,
                 Office = rs.Properties["physicaldeliveryofficename"][0].ToString(),
-                Created = DateTime.Parse(rs.Properties["whenCreated"][0].ToString())
+                Created = rs.Properties.Contains("whenCreated") ? DateTime.Parse(rs.Properties["whenCreated"][0].ToString()) : DateTime.MinValue
             };
 
             _userCache.Add(uinfo.Login, uinfo);
@@ -165,6 +192,7 @@
             if (de.NativeGuid == null) return false;
 
             int flags = (int) de.Properties["userAccountControl"].Value;
+            Console.Write("«{0}»", flags);
 
             return !Convert.ToBoolean(flags & 0x0002);
         }
