@@ -92,7 +92,15 @@
                         Console.Write(" managed by ");
 
                         Console.ForegroundColor = ConsoleColor.Magenta;
-                        Console.Write(uinfo.Manager.Split(',')[0].Split('=')[1]);
+                        if(uinfo.Manager.Contains(",") && uinfo.Manager.Contains("="))
+                        {
+                            Console.Write(uinfo.Manager.Split(',')[0].Split('=')[1]);
+                        }
+                        else
+                        {
+                            Console.Write(uinfo.Manager);
+                        }
+
                         Console.ForegroundColor = ConsoleColor.Gray;
 
                         Console.Write(" in ");

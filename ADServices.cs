@@ -64,7 +64,7 @@
                     Login = managerName,
                     Name = rs.Properties["name"][0].ToString(),
                     Department = rs.Properties["department"][0].ToString(),
-                    Manager = rs.Properties["manager"][0].ToString(),
+                    Manager = rs.Properties["manager"].Count > 0 ? rs.Properties["manager"][0].ToString() : "(no manager set!)",
                     JobTitle = rs.Properties.Contains("title") ? rs.Properties["title"][0].ToString() : string.Empty,
                     Office = rs.Properties["physicaldeliveryofficename"][0].ToString(),
                     Created = rs.Properties.Contains("whenCreated") ? DateTime.Parse(rs.Properties["whenCreated"][0].ToString()) : DateTime.MinValue
