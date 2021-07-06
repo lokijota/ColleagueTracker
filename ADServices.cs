@@ -19,6 +19,9 @@
         // Second path to try if a user is not found on the previous one (could be generic...)
         public static string AlternativeLdapPath { get; set; }
 
+        // Third path to try if a user is not found on the previous one (could be generic...)
+        public static string AlternativeLdapPath2 { get; set; }
+
         // Cache of users read from AD, to make less queries
         private static Dictionary<string, UserInfo> _userCache = new Dictionary<string, UserInfo>();
 
@@ -64,7 +67,7 @@
                     Login = managerName,
                     Name = rs.Properties["name"][0].ToString(),
                     Department = rs.Properties["department"][0].ToString(),
-                    Manager = rs.Properties["manager"].Count > 0 ? rs.Properties["manager"][0].ToString() : "(no manager set!)",
+                    Manager = rs.Properties["manager"].Count > 0 ? rs.Properties["manager"][0].ToString() : "(no manager set)",
                     JobTitle = rs.Properties.Contains("title") ? rs.Properties["title"][0].ToString() : string.Empty,
                     Office = rs.Properties["physicaldeliveryofficename"][0].ToString(),
                     Created = rs.Properties.Contains("whenCreated") ? DateTime.Parse(rs.Properties["whenCreated"][0].ToString()) : DateTime.MinValue
@@ -77,22 +80,31 @@
             foreach (string objProperty in rs.Properties["DirectReports"])
             {
                 // each of the results is a distinguished name https://msdn.microsoft.com/en-us/library/aa366101(v=vs.85).aspx
-                string emp = objProperty.ToString();
+                string emp = objProperty.ToString().Replace("/", "\\/"); // escaping "/" - bug correction due to pronouns now in AD names
 
                 // Get the employee information
                 DirectoryEntry empde = new DirectoryEntry("LDAP://" + emp);
 
                 try
                 {
+                    // get the fields individually to make it easier to diagnose crashes
+                    string adLogin = empde.Properties["samaccountname"].Value.ToString();
+                    string adName = empde.Properties["name"].Value.ToString();
+                    string adDepartment = empde.Properties.Contains("department") ? empde.Properties["department"].Value.ToString() : "(no dept set)";
+                    string adManager = managerName;
+                    string adJobTitle = empde.Properties.Contains("title") ? empde.Properties["title"].Value.ToString() : "(no title set)";
+                    string adOffice = empde.Properties.Contains("physicaldeliveryofficename") ? empde.Properties["physicaldeliveryofficename"].Value.ToString() : "(no office set)";
+                    DateTime adCreated = empde.Properties.Contains("whenCreated") ? DateTime.Parse(empde.Properties["whenCreated"].Value.ToString()) : DateTime.MinValue;
+
                     UserInfo userInfo = new UserInfo
                     {
-                        Login = empde.Properties["samaccountname"].Value.ToString(),
-                        Name = empde.Properties["name"].Value.ToString(),
-                        Department = empde.Properties["department"].Value.ToString(),
-                        Manager = managerName,
-                        JobTitle = empde.Properties.Contains("title") ? empde.Properties["title"].Value.ToString() : string.Empty,
-                        Office = empde.Properties["physicaldeliveryofficename"].Value.ToString(),
-                        Created = empde.Properties.Contains("whenCreated") ? DateTime.Parse(empde.Properties["whenCreated"].Value.ToString()) : DateTime.MinValue
+                        Login = adLogin,
+                        Name = adName,
+                        Department = adDepartment,
+                        Manager = adManager,
+                        JobTitle = adJobTitle,
+                        Office = adOffice,
+                        Created = adCreated
                     };
 
                     if(!_userCache.ContainsKey(userInfo.Login))
@@ -104,7 +116,7 @@
 
                     reports.Add(userInfo);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     // "CN=some name,OU=SomeOU,DC=somedept,DC=someorg,DC=com"
                     string cn = emp.Split(',')[0].Split('=')[1]; // extract "some name'
@@ -135,7 +147,7 @@
 
             SearchResult rs = ds.FindOne();
 
-            // try the alternative path
+            // try the alternative path 1
             if(rs == null && AlternativeLdapPath != null)
             {
                 DirectoryEntry de2 = new DirectoryEntry(AlternativeLdapPath);
@@ -147,21 +159,41 @@
                 rs = ds2.FindOne();
             }
 
+            // try the alternative path 1
+            if (rs == null && AlternativeLdapPath != null)
+            {
+                DirectoryEntry de3 = new DirectoryEntry(AlternativeLdapPath2);
+
+                DirectorySearcher ds3 = new DirectorySearcher(de3);
+                ds3.Filter = "(&((&(objectCategory=Person)(objectClass=User)))(samaccountname=" + login + "))";
+                ds3.SearchScope = SearchScope.Subtree;
+
+                rs = ds3.FindOne();
+            }
+
             // not found in either main or alternative ldap path
-            if(rs == null)
+            if (rs == null)
             {
                 return null;
             }
 
+            // get the fields individually to make it easier to diagnose crashes
+            string adName = rs.Properties["name"][0].ToString();
+            string adDepartment = rs.Properties.Contains("department") ? rs.Properties["department"][0].ToString() : "(no dept set)";
+            string adManager = rs.Properties.Contains("manager") ? rs.Properties["manager"][0].ToString() : "(no manager set)";
+            string adJobTitle = rs.Properties.Contains("title") ? rs.Properties["title"][0].ToString() : "(no title set)";
+            string adOffice = rs.Properties.Contains("physicaldeliveryofficename") ? rs.Properties["physicaldeliveryofficename"][0].ToString() : "(no office set)";
+            DateTime adCreated = rs.Properties.Contains("whenCreated") ? DateTime.Parse(rs.Properties["whenCreated"][0].ToString()) : DateTime.MinValue;
+
             UserInfo uinfo = new UserInfo
             {
                 Login = login,
-                Name = rs.Properties["name"][0].ToString(),
-                Department = rs.Properties["department"][0].ToString(),
-                Manager = rs.Properties["manager"][0].ToString(),
-                JobTitle = rs.Properties.Contains("title") ? rs.Properties["title"][0].ToString() : string.Empty,
-                Office = rs.Properties["physicaldeliveryofficename"][0].ToString(),
-                Created = rs.Properties.Contains("whenCreated") ? DateTime.Parse(rs.Properties["whenCreated"][0].ToString()) : DateTime.MinValue
+                Name = adName,
+                Department = adDepartment,
+                Manager = adManager,
+                JobTitle = adJobTitle,
+                Office = adOffice,
+                Created = adCreated
             };
 
             _userCache.Add(uinfo.Login, uinfo);

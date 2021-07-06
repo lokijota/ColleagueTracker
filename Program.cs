@@ -20,6 +20,7 @@
 
             ADServices.LdapPath = config.LdapPath;
             ADServices.AlternativeLdapPath = config.AlternativeLdapPath != null && config.AlternativeLdapPath.Length > 0 ? config.AlternativeLdapPath : null;
+            ADServices.AlternativeLdapPath2 = config.AlternativeLdapPath2 != null && config.AlternativeLdapPath2.Length > 0 ? config.AlternativeLdapPath2 : null;
 
             Stopwatch sw = new Stopwatch(); sw.Start();
 
